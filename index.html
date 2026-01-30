@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO Card Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    .card {
+      width: 70px;
+      height: 100px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      font-family: 'Nunito', sans-serif;
+    }
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    .card-inner {
+      width: 55px;
+      height: 80px;
+      background: white;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      transform: skewX(-5deg);
+    }
+    .card-red { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #dc2626; }
+    .card-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #2563eb; }
+    .card-green { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: #16a34a; }
+    .card-yellow { background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); color: #ca8a04; }
+    .card-wild { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); }
+    .card-wild .card-inner {
+      background: conic-gradient(#ef4444 0deg 90deg, #3b82f6 90deg 180deg, #22c55e 180deg 270deg, #eab308 270deg 360deg);
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+    .opponent-card {
+      width: 50px;
+      height: 70px;
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .opponent-card-inner {
+      width: 40px;
+      height: 55px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: 'Bangers', cursive;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+    .deck-card {
+      width: 80px;
+      height: 115px;
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .deck-card:hover {
+      transform: scale(1.05);
+    }
+    .deck-card-inner {
+      width: 65px;
+      height: 95px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: 'Bangers', cursive;
+      font-size: 24px;
+      letter-spacing: 2px;
+    }
+    .discard-pile {
+      width: 80px;
+      height: 115px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    .discard-inner {
+      width: 65px;
+      height: 95px;
+      background: white;
+      border-radius: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      transform: skewX(-5deg);
+    }
+    .color-picker {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .color-option {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 4px solid white;
+    }
+    .color-option:hover {
+      transform: scale(1.2);
+    }
+    .uno-button {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      color: white;
+      font-family: 'Bangers', cursive;
+      font-size: 24px;
+      letter-spacing: 2px;
+      padding: 12px 30px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 3px solid #fbbf24;
+    }
+    .uno-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 5px 20px rgba(239, 68, 68, 0.5);
+    }
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+      color: white;
+      padding: 20px 40px;
+      border-radius: 15px;
+      font-family: 'Bangers', cursive;
+      font-size: 28px;
+      letter-spacing: 2px;
+      z-index: 50;
+      animation: pop 0.5s ease;
+    }
+    @keyframes pop {
+      0% { transform: translate(-50%, -50%) scale(0); }
+      50% { transform: translate(-50%, -50%) scale(1.2); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes floatCard {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-20px); }
+    }
+    .player-hand {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      max-width: 100%;
+      padding: 10px;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full">
+  <div id="app" class="h-full w-full overflow-auto" style="background: linear-gradient(180deg, #1e3a5f 0%, #0f172a 100%);"><!-- Home Screen -->
+   <div id="home-screen" class="h-full flex flex-col items-center justify-center">
+    <div class="text-center mb-12">
+     <h1 class="text-8xl text-white mb-4" style="font-family: 'Bangers', cursive; letter-spacing: 8px; text-shadow: 4px 4px 8px rgba(0,0,0,0.5);">UNO</h1>
+     <p class="text-white/80 text-xl" style="font-family: 'Nunito', sans-serif;">The Classic Card Game</p>
+    </div><!-- Animated Cards Display -->
+    <div class="mb-12 flex gap-4">
+     <div class="card card-red" style="animation: floatCard 3s ease-in-out infinite; transform: rotate(-10deg);">
+      <div class="card-inner">
+       7
+      </div>
+     </div>
+     <div class="card card-blue" style="animation: floatCard 3s ease-in-out 0.5s infinite; transform: rotate(5deg);">
+      <div class="card-inner">
+       ⊘
+      </div>
+     </div>
+     <div class="card card-yellow" style="animation: floatCard 3s ease-in-out 1s infinite; transform: rotate(-5deg);">
+      <div class="card-inner">
+       ⟲
+      </div>
+     </div>
+     <div class="card card-green" style="animation: floatCard 3s ease-in-out 1.5s infinite; transform: rotate(10deg);">
+      <div class="card-inner">
+       +2
+      </div>
+     </div>
+    </div><!-- Game Options -->
+    <div class="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 max-w-md w-full mx-4">
+     <h2 class="text-white text-2xl mb-6 text-center" style="font-family: 'Bangers', cursive; letter-spacing: 2px;">Game Settings</h2>
+     <div class="mb-6"><label class="text-white text-sm mb-2 block" style="font-family: 'Nunito', sans-serif; font-weight: 600;">Number of Bots</label>
+      <div class="flex gap-3 justify-center"><button class="bot-count-btn bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold border-2 border-transparent" data-count="1" style="font-family: 'Nunito', sans-serif;">1 Bot</button> <button class="bot-count-btn bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-xl transition font-semibold border-2 border-transparent" data-count="2" style="font-family: 'Nunito', sans-serif;">2 Bots</button> <button class="bot-count-btn bg-white/40 text-white px-6 py-3 rounded-xl font-semibold border-2 border-yellow-400" data-count="3" style="font-family: 'Nunito', sans-serif;">3 Bots</button>
+      </div>
+     </div>
+     <div class="mb-8"><label class="text-white text-sm mb-2 block" style="font-family: 'Nunito', sans-serif; font-weight: 600;">Difficulty</label>
+      <div class="flex gap-3 justify-center"><button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white px-5 py-3 rounded-xl transition font-semibold border-2 border-transparent" data-difficulty="easy" style="font-family: 'Nunito', sans-serif;">Easy</button> <button class="difficulty-btn bg-white/40 text-white px-5 py-3 rounded-xl font-semibold border-2 border-yellow-400" data-difficulty="medium" style="font-family: 'Nunito', sans-serif;">Medium</button> <button class="difficulty-btn bg-white/20 hover:bg-white/30 text-white px-5 py-3 rounded-xl transition font-semibold border-2 border-transparent" data-difficulty="hard" style="font-family: 'Nunito', sans-serif;">Hard</button>
+      </div>
+     </div><button id="start-game-btn" class="uno-button w-full" style="font-size: 28px;">START GAME</button>
+    </div>
+    <div class="mt-8 text-white/60 text-sm text-center max-w-md px-4" style="font-family: 'Nunito', sans-serif;">
+     <p>Match cards by color or number. Use action cards strategically. First to empty their hand wins!</p>
+    </div>
+   </div><!-- Game Screen -->
+   <div id="game-screen" class="h-full flex-col hidden"><!-- Header -->
+    <div class="p-4 flex justify-between items-center">
+     <h1 id="game-title" class="text-3xl text-white" style="font-family: 'Bangers', cursive; letter-spacing: 3px;">UNO</h1>
+     <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2"><label class="text-white text-sm" style="font-family: 'Nunito', sans-serif;">Difficulty:</label> <select id="difficulty-select" class="bg-white/20 text-white px-3 py-1 rounded-lg border border-white/30 cursor-pointer" style="font-family: 'Nunito', sans-serif; font-weight: 600;"> <option value="easy">Easy</option> <option value="medium" selected>Medium</option> <option value="hard">Hard</option> </select>
+      </div><span id="turn-indicator" class="text-white font-semibold" style="font-family: 'Nunito', sans-serif;"></span> <button id="new-game-btn" class="bg-white/20 text-white px-4 py-2 rounded-lg hover:bg-white/30 transition" style="font-family: 'Nunito', sans-serif; font-weight: 600;">New Game</button>
+     </div>
+    </div><!-- Opponents Area -->
+    <div class="flex justify-center gap-8 px-4 py-2">
+     <div class="text-center">
+      <div class="text-white text-sm mb-2" style="font-family: 'Nunito', sans-serif;">
+       🤖 Bot 1
+      </div>
+      <div id="opponent1-cards" class="flex gap-1 justify-center"></div>
+      <div id="opponent1-count" class="text-yellow-400 text-xs mt-1" style="font-family: 'Nunito', sans-serif;"></div>
+     </div>
+     <div class="text-center">
+      <div class="text-white text-sm mb-2" style="font-family: 'Nunito', sans-serif;">
+       🤖 Bot 2
+      </div>
+      <div id="opponent2-cards" class="flex gap-1 justify-center"></div>
+      <div id="opponent2-count" class="text-yellow-400 text-xs mt-1" style="font-family: 'Nunito', sans-serif;"></div>
+     </div>
+     <div class="text-center">
+      <div class="text-white text-sm mb-2" style="font-family: 'Nunito', sans-serif;">
+       🤖 Bot 3
+      </div>
+      <div id="opponent3-cards" class="flex gap-1 justify-center"></div>
+      <div id="opponent3-count" class="text-yellow-400 text-xs mt-1" style="font-family: 'Nunito', sans-serif;"></div>
+     </div>
+    </div><!-- Play Area -->
+    <div class="flex-1 flex items-center justify-center gap-8"><!-- Draw Deck -->
+     <div id="draw-deck" class="deck-card">
+      <div class="deck-card-inner">
+       UNO
+      </div>
+     </div><!-- Discard Pile -->
+     <div id="discard-pile" class="discard-pile">
+      <div class="discard-inner"></div>
+     </div><!-- Direction Indicator -->
+     <div id="direction" class="text-white text-4xl">
+      ➡����
+     </div>
+    </div><!-- Player Area -->
+    <div class="p-4">
+     <div class="text-center mb-2"><span class="text-white" style="font-family: 'Nunito', sans-serif; font-weight: 600;">👤 Your Hand</span> <button id="uno-btn" class="uno-button ml-4 hidden">UNO!</button>
+     </div>
+     <div id="player-hand" class="player-hand"></div>
+    </div>
+   </div><!-- Color Picker Modal -->
+   <div id="color-picker" class="color-picker hidden">
+    <div class="text-center">
+     <h2 class="text-white text-2xl mb-6" style="font-family: 'Bangers', cursive; letter-spacing: 2px;">Choose a Color</h2>
+     <div class="flex gap-4">
+      <div class="color-option" style="background: #ef4444;" data-color="red"></div>
+      <div class="color-option" style="background: #3b82f6;" data-color="blue"></div>
+      <div class="color-option" style="background: #22c55e;" data-color="green"></div>
+      <div class="color-option" style="background: #eab308;" data-color="yellow"></div>
+     </div>
+    </div>
+   </div><!-- Toast -->
+   <div id="toast" class="toast hidden"></div><!-- Winner Modal -->
+   <div id="winner-modal" class="color-picker hidden">
+    <div class="text-center bg-gray-800 p-8 rounded-2xl">
+     <h2 id="winner-text" class="text-white text-4xl mb-6" style="font-family: 'Bangers', cursive; letter-spacing: 3px;">🎉 You Win! 🎉</h2><button id="play-again-btn" class="uno-button">Play Again</button>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      game_title: 'UNO'
+    };
+
+    let config = { ...defaultConfig };
+
+    // Game State
+    let deck = [];
+    let players = [[], [], [], []]; // 0 = human, 1-3 = bots
+    let discardPile = [];
+    let currentPlayer = 0;
+    let direction = 1; // 1 = clockwise, -1 = counter
+    let currentColor = '';
+    let pendingWildCard = null;
+    let calledUno = false;
+    let gameOver = false;
+    let difficulty = 'medium'; // easy, medium, hard
+    let botCount = 3; // Number of bot opponents
+
+    const colors = ['red', 'blue', 'green', 'yellow'];
+    const values = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'Skip', 'Reverse', '+2'];
+    const specialValues = { 'Skip': '⊘', 'Reverse': '⟲', '+2': '+2' };
+
+    function createDeck() {
+      const newDeck = [];
+      // Number and action cards
+      colors.forEach(color => {
+        newDeck.push({ color, value: '0' });
+        for (let i = 1; i <= 12; i++) {
+          newDeck.push({ color, value: values[i] });
+          newDeck.push({ color, value: values[i] });
+        }
+      });
+      // Wild cards
+      for (let i = 0; i < 4; i++) {
+        newDeck.push({ color: 'wild', value: 'Wild' });
+        newDeck.push({ color: 'wild', value: '+4' });
+      }
+      return newDeck;
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function initGame() {
+      deck = shuffle(createDeck());
+      
+      // Initialize player arrays based on bot count
+      players = [[]]; // Human player
+      for (let i = 0; i < botCount; i++) {
+        players.push([]);
+      }
+      
+      discardPile = [];
+      currentPlayer = 0;
+      direction = 1;
+      gameOver = false;
+      calledUno = false;
+
+      // Deal 7 cards to each player
+      for (let i = 0; i < 7; i++) {
+        players.forEach(hand => hand.push(deck.pop()));
+      }
+
+      // Start discard pile with a non-wild card
+      let startCard;
+      do {
+        startCard = deck.pop();
+        if (startCard.color === 'wild') deck.unshift(startCard);
+      } while (startCard.color === 'wild');
+      
+      discardPile.push(startCard);
+      currentColor = startCard.color;
+
+      render();
+      updateTurnIndicator();
+    }
+
+    function getCardDisplay(value) {
+      return specialValues[value] || value;
+    }
+
+    function createCardElement(card, index, isPlayer = false) {
+      const div = document.createElement('div');
+      div.className = `card card-${card.color}`;
+      div.innerHTML = `<div class="card-inner">${card.color === 'wild' ? (card.value === '+4' ? '+4' : '🌈') : getCardDisplay(card.value)}</div>`;
+      
+      if (isPlayer) {
+        div.onclick = () => playCard(index);
+        div.style.animation = 'slideIn 0.3s ease';
+        div.style.animationDelay = `${index * 0.05}s`;
+      }
+      
+      return div;
+    }
+
+    function createOpponentCard() {
+      const div = document.createElement('div');
+      div.className = 'opponent-card';
+      div.innerHTML = '<div class="opponent-card-inner">UNO</div>';
+      return div;
+    }
+
+    function render() {
+      // Render player hand
+      const playerHand = document.getElementById('player-hand');
+      playerHand.innerHTML = '';
+      players[0].forEach((card, i) => {
+        playerHand.appendChild(createCardElement(card, i, true));
+      });
+
+      // Render opponent cards
+      for (let i = 1; i <= botCount; i++) {
+        const container = document.getElementById(`opponent${i}-cards`);
+        const countEl = document.getElementById(`opponent${i}-count`);
+        if (container && countEl) {
+          container.innerHTML = '';
+          const displayCount = Math.min(players[i].length, 7);
+          for (let j = 0; j < displayCount; j++) {
+            container.appendChild(createOpponentCard());
+          }
+          countEl.textContent = `${players[i].length} cards`;
+        }
+      }
+
+      // Render discard pile
+      const topCard = discardPile[discardPile.length - 1];
+      const discardEl = document.getElementById('discard-pile');
+      discardEl.className = `discard-pile card-${topCard.color === 'wild' ? currentColor : topCard.color}`;
+      discardEl.innerHTML = `<div class="discard-inner" style="color: ${getColorHex(topCard.color === 'wild' ? currentColor : topCard.color)}">${topCard.color === 'wild' ? (topCard.value === '+4' ? '+4' : '🌈') : getCardDisplay(topCard.value)}</div>`;
+
+      // Direction indicator
+      document.getElementById('direction').textContent = direction === 1 ? '➡️' : '⬅️';
+
+      // UNO button
+      const unoBtn = document.getElementById('uno-btn');
+      if (players[0].length === 2 && currentPlayer === 0) {
+        unoBtn.classList.remove('hidden');
+      } else {
+        unoBtn.classList.add('hidden');
+      }
+    }
+
+    function getColorHex(color) {
+      const colorMap = { red: '#dc2626', blue: '#2563eb', green: '#16a34a', yellow: '#ca8a04' };
+      return colorMap[color] || '#1f2937';
+    }
+
+    function canPlay(card) {
+      const topCard = discardPile[discardPile.length - 1];
+      if (card.color === 'wild') return true;
+      if (card.color === currentColor) return true;
+      if (card.value === topCard.value) return true;
+      return false;
+    }
+
+    function playCard(index) {
+      if (currentPlayer !== 0 || gameOver) return;
+
+      const card = players[0][index];
+      if (!canPlay(card)) {
+        showToast("Can't play that card!");
+        return;
+      }
+
+      // Check UNO call
+      if (players[0].length === 2 && !calledUno) {
+        // Penalty for not calling UNO
+        showToast('Forgot to call UNO! +2 cards');
+        drawCards(0, 2);
+      }
+      calledUno = false;
+
+      players[0].splice(index, 1);
+      discardPile.push(card);
+
+      if (card.color === 'wild') {
+        pendingWildCard = card;
+        document.getElementById('color-picker').classList.remove('hidden');
+        return;
+      }
+
+      currentColor = card.color;
+      handleSpecialCard(card);
+      checkWinner(0);
+      render();
+    }
+
+    function handleSpecialCard(card) {
+      if (card.value === 'Skip') {
+        nextPlayer();
+        showToast('Skip!');
+      } else if (card.value === 'Reverse') {
+        direction *= -1;
+        showToast('Reverse!');
+        if (players.filter(p => p.length > 0).length === 2) {
+          // In 2 player game, reverse acts as skip
+        }
+      } else if (card.value === '+2') {
+        const nextP = getNextPlayer();
+        drawCards(nextP, 2);
+        showToast(`+2 to ${nextP === 0 ? 'You' : 'Bot ' + nextP}!`);
+        nextPlayer();
+      } else if (card.value === '+4') {
+        const nextP = getNextPlayer();
+        drawCards(nextP, 4);
+        showToast(`+4 to ${nextP === 0 ? 'You' : 'Bot ' + nextP}!`);
+        nextPlayer();
+      }
+
+      nextPlayer();
+      updateTurnIndicator();
+
+      if (currentPlayer !== 0 && !gameOver) {
+        setTimeout(botTurn, 1000);
+      }
+    }
+
+    function selectColor(color) {
+      currentColor = color;
+      document.getElementById('color-picker').classList.add('hidden');
+      handleSpecialCard(pendingWildCard);
+      pendingWildCard = null;
+      checkWinner(0);
+      render();
+    }
+
+    function drawCards(playerIndex, count) {
+      for (let i = 0; i < count; i++) {
+        if (deck.length === 0) {
+          // Reshuffle discard pile
+          const topCard = discardPile.pop();
+          deck = shuffle(discardPile);
+          discardPile = [topCard];
+        }
+        if (deck.length > 0) {
+          players[playerIndex].push(deck.pop());
+        }
+      }
+    }
+
+    function drawFromDeck() {
+      if (currentPlayer !== 0 || gameOver) return;
+      
+      drawCards(0, 1);
+      showToast('Drew a card');
+      nextPlayer();
+      render();
+      updateTurnIndicator();
+
+      if (currentPlayer !== 0) {
+        setTimeout(botTurn, 1000);
+      }
+    }
+
+    function getNextPlayer() {
+      return (currentPlayer + direction + players.length) % players.length;
+    }
+
+    function nextPlayer() {
+      currentPlayer = getNextPlayer();
+    }
+
+    function updateTurnIndicator() {
+      const indicator = document.getElementById('turn-indicator');
+      if (currentPlayer === 0) {
+        indicator.textContent = "Your turn!";
+        indicator.style.color = '#4ade80';
+      } else {
+        indicator.textContent = `Bot ${currentPlayer}'s turn...`;
+        indicator.style.color = '#fbbf24';
+      }
+    }
+
+    function botTurn() {
+      if (gameOver || currentPlayer === 0) return;
+
+      const hand = players[currentPlayer];
+      const playableCards = hand.map((card, i) => ({ card, index: i })).filter(c => canPlay(c.card));
+
+      if (playableCards.length > 0) {
+        let choice;
+
+        if (difficulty === 'easy') {
+          // Easy: Random playable card
+          choice = playableCards[Math.floor(Math.random() * playableCards.length)];
+        } else if (difficulty === 'medium') {
+          // Medium: Prioritize action cards
+          playableCards.sort((a, b) => {
+            if (a.card.color === 'wild') return 1;
+            if (b.card.color === 'wild') return -1;
+            if (a.card.value === '+2' || a.card.value === 'Skip' || a.card.value === 'Reverse') return -1;
+            return 0;
+          });
+          choice = playableCards[0];
+        } else {
+          // Hard: Strategic play - save wilds, target player, optimize color
+          playableCards.sort((a, b) => {
+            // Prioritize +4 and +2 when player is close to winning
+            if (players[0].length <= 3) {
+              if (a.card.value === '+4') return -1;
+              if (b.card.value === '+4') return 1;
+              if (a.card.value === '+2') return -1;
+              if (b.card.value === '+2') return 1;
+            }
+            
+            // Save wild cards for later unless necessary
+            if (a.card.color === 'wild' && playableCards.length > 1) return 1;
+            if (b.card.color === 'wild' && playableCards.length > 1) return -1;
+            
+            // Prioritize actions
+            if (a.card.value === 'Skip' || a.card.value === 'Reverse') return -1;
+            if (b.card.value === 'Skip' || b.card.value === 'Reverse') return 1;
+            
+            return 0;
+          });
+          choice = playableCards[0];
+        }
+
+        hand.splice(choice.index, 1);
+        discardPile.push(choice.card);
+
+        if (hand.length === 1) {
+          showToast(`Bot ${currentPlayer} says UNO!`);
+        }
+
+        if (choice.card.color === 'wild') {
+          // Choose color based on difficulty
+          if (difficulty === 'easy') {
+            // Random color
+            currentColor = colors[Math.floor(Math.random() * 4)];
+          } else {
+            // Most common color in hand
+            const colorCounts = { red: 0, blue: 0, green: 0, yellow: 0 };
+            hand.forEach(c => { if (c.color !== 'wild') colorCounts[c.color]++; });
+            currentColor = Object.entries(colorCounts).sort((a, b) => b[1] - a[1])[0][0];
+          }
+        } else {
+          currentColor = choice.card.color;
+        }
+
+        handleSpecialCard(choice.card);
+        checkWinner(currentPlayer);
+      } else {
+        drawCards(currentPlayer, 1);
+        showToast(`Bot ${currentPlayer} draws`);
+        nextPlayer();
+        updateTurnIndicator();
+        
+        if (currentPlayer !== 0 && !gameOver) {
+          setTimeout(botTurn, 1000);
+        }
+      }
+
+      render();
+    }
+
+    function checkWinner(playerIndex) {
+      if (players[playerIndex].length === 0) {
+        gameOver = true;
+        const modal = document.getElementById('winner-modal');
+        const text = document.getElementById('winner-text');
+        
+        if (playerIndex === 0) {
+          text.textContent = '🎉 You Win! 🎉';
+        } else {
+          text.textContent = `🤖 Bot ${playerIndex} Wins!`;
+        }
+        
+        modal.classList.remove('hidden');
+      }
+    }
+
+    function callUno() {
+      if (players[0].length === 2) {
+        calledUno = true;
+        showToast('UNO!');
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 1500);
+    }
+
+    // Event Listeners
+    document.getElementById('draw-deck').onclick = drawFromDeck;
+    document.getElementById('uno-btn').onclick = callUno;
+    document.getElementById('new-game-btn').onclick = () => {
+      document.getElementById('game-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('flex');
+      document.getElementById('home-screen').classList.remove('hidden');
+    };
+    document.getElementById('play-again-btn').onclick = () => {
+      document.getElementById('winner-modal').classList.add('hidden');
+      initGame();
+    };
+    document.getElementById('difficulty-select').onchange = (e) => {
+      difficulty = e.target.value;
+      showToast(`Difficulty set to ${difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}`);
+    };
+
+    // Start game button
+    document.getElementById('start-game-btn').onclick = () => {
+      document.getElementById('home-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      document.getElementById('game-screen').classList.add('flex');
+      initGame();
+    };
+
+    // Bot count selection
+    document.querySelectorAll('.bot-count-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.bot-count-btn').forEach(b => {
+          b.classList.remove('bg-white/40', 'border-yellow-400');
+          b.classList.add('bg-white/20', 'border-transparent');
+        });
+        btn.classList.remove('bg-white/20', 'border-transparent');
+        btn.classList.add('bg-white/40', 'border-yellow-400');
+        botCount = parseInt(btn.dataset.count);
+        updateOpponentDisplay();
+      };
+    });
+
+    // Difficulty selection
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.difficulty-btn').forEach(b => {
+          b.classList.remove('bg-white/40', 'border-yellow-400');
+          b.classList.add('bg-white/20', 'border-transparent');
+        });
+        btn.classList.remove('bg-white/20', 'border-transparent');
+        btn.classList.add('bg-white/40', 'border-yellow-400');
+        difficulty = btn.dataset.difficulty;
+      };
+    });
+
+    document.querySelectorAll('.color-option').forEach(el => {
+      el.onclick = () => selectColor(el.dataset.color);
+    });
+
+    function updateOpponentDisplay() {
+      // Show/hide opponent sections based on bot count
+      for (let i = 1; i <= 3; i++) {
+        const opponentDiv = document.getElementById(`opponent${i}-cards`).parentElement;
+        if (i <= botCount) {
+          opponentDiv.style.display = 'block';
+        } else {
+          opponentDiv.style.display = 'none';
+        }
+      }
+    }
+
+    // Element SDK
+    async function onConfigChange(cfg) {
+      const title = cfg.game_title || defaultConfig.game_title;
+      document.getElementById('game-title').textContent = title;
+    }
+
+    function mapToCapabilities(cfg) {
+      return {
+        recolorables: [],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    function mapToEditPanelValues(cfg) {
+      return new Map([
+        ['game_title', cfg.game_title || defaultConfig.game_title]
+      ]);
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+      config = window.elementSdk.config || defaultConfig;
+    }
+
+    // Initialize
+    onConfigChange(config);
+    updateOpponentDisplay();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9c64a08b06e1c4fb',t:'MTc2OTgxNDQ2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
